@@ -1,18 +1,15 @@
 import os
-from typing import List
 
 from fastapi import APIRouter, Header, HTTPException, UploadFile, File
 import json
 from fastapi.responses import JSONResponse
-from PIL import Image
-import pytesseract
 
 from src.services.serpros_services import SerprosServices
 
-router = APIRouter()
-
+router = APIRouter(prefix="/serpros")
 
 class SerprosController:
+
 
     @router.get("/message")
     def read_users():
@@ -72,17 +69,19 @@ class SerprosController:
         return resultados
 
 
-    @router.get("/files-convert-to-json/")
+    @router.get("/files-convert/")
     async def convert_file_to_json():
         try:
-            file_path = 'docs/NFs.png'
-            file_type = 'image'
+            file_path = 'docs/NFs.txt'
+            file_type = 'txt'
             result = SerprosServices.read_and_convert_to_json(file_path, file_type)
             return result
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Erro ao processar arquivo: {str(e)}")
 
-##################################TESTE de MULTI CODIGOS#######################################
+
+
+################################## MULTI LOTES CODIGOS #######################################
 
     @router.get("/dados-nfe-local/{chave_nfe}")
     async def obter_dados_nfe_endpoint_local(chave_nfe: str,
@@ -131,3 +130,50 @@ class SerprosController:
             return resultados
         except HTTPException as e:
             raise e
+
+    @router.get("/dados-nfe-online/")
+    async def obter_dados_nfe_online(
+            accept: str = Header("application/json, application/xml"),
+            authorization: str = Header("Bearer 06aef429-a981-3ec5-a1f8-71d38d86481e")
+    ):
+        try:
+            # Caminho fixo do arquivo
+            file_path = 'docs/NFs.txt'
+
+            # Lê os códigos do arquivo
+            codigos_nfe = SerprosServices._read_codes_from_txt(file_path)
+
+            # Resultado para armazenar os dados
+            resultados = {}
+
+            # Para cada código, faz a chamada ao endpoint Serpros
+            for chave_nfe in codigos_nfe:
+                try:
+                    dados_nfe = SerprosServices.obter_dados_nfe(chave_nfe, authorization)
+
+                    # Adiciona o resultado ao dicionário de resultados
+                    resultados[chave_nfe] = dados_nfe
+                except HTTPException as e:
+                    # Se ocorrer um erro, adiciona um valor nulo ao dicionário de resultados
+                    resultados[chave_nfe] = None
+
+            return resultados
+        except HTTPException as e:
+            raise e
+
+
+
+################################################Upload DE ARQUIVOS ##################################################################
+        @router.post("/processar-arquivo/")
+        async def processar_arquivo(file: UploadFile = File(...)):
+            try:
+                print("Recebendo solicitação para processar arquivo.")
+                result = SerprosServices.read_and_convert_to_json_auto(file.filename, language='pt')
+                print("Arquivo processado com sucesso.")
+                return JSONResponse(content={"result": result}, status_code=200)
+            except HTTPException as e:
+                print(f"Erro HTTP: {e}")
+                raise e
+            except Exception as e:
+                print(f"Erro durante o processamento do arquivo: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Erro durante o processamento do arquivo: {str(e)}")
