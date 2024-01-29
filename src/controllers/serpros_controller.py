@@ -164,16 +164,23 @@ class SerprosController:
 
 
 ################################################Upload DE ARQUIVOS ##################################################################
-        @router.post("/processar-arquivo/")
-        async def processar_arquivo(file: UploadFile = File(...)):
-            try:
-                print("Recebendo solicitação para processar arquivo.")
-                result = SerprosServices.read_and_convert_to_json_auto(file.filename, language='pt')
-                print("Arquivo processado com sucesso.")
-                return JSONResponse(content={"result": result}, status_code=200)
-            except HTTPException as e:
-                print(f"Erro HTTP: {e}")
-                raise e
-            except Exception as e:
-                print(f"Erro durante o processamento do arquivo: {str(e)}")
-                raise HTTPException(status_code=500, detail=f"Erro durante o processamento do arquivo: {str(e)}")
+    @router.post("/processar-arquivo/")
+    async def processar_arquivo(
+            file: UploadFile = File(...),
+            authorization: str = Header("Bearer 06aef429-a981-3ec5-a1f8-71d38d86481e")
+    ):
+        try:
+            print("Recebendo solicitação para processar arquivo.")
+            result = SerprosServices.read_and_convert_to_json_auto(file, authorization, language='pt')
+            print("Arquivo processado com sucesso.")
+            return JSONResponse(content={"result": result}, status_code=200)
+        except HTTPException as e:
+            print(f"Erro HTTP: {e}")
+            raise e
+        except FileNotFoundError as e:
+            print(f"Erro ao ler o arquivo: {str(e)}")
+            raise HTTPException(status_code=404, detail=f"Arquivo não encontrado: {str(e)}")
+        except Exception as e:
+            print(f"Erro durante o processamento do arquivo: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Erro durante o processamento do arquivo: {str(e)}")
+

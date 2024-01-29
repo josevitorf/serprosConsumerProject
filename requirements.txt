@@ -1,3 +1,11 @@
-fastapi==0.68.0
-uvicorn==0.15.0
-httpx==0.21.0
+fastapi~=0.109.0
+uvicorn~=0.26.0
+httpx~=0.26.0
+
+pytesseract~=0.3.10
+easyocr~=1.7.1
+pyzbar~=0.1.9
+pillow~=10.2.0
+opencv-python~=4.9.0.80
+zxing~=1.0.1
+numpy~=1.26.3
