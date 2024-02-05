@@ -93,6 +93,8 @@ class SerprosController:
         except HTTPException as e:
             raise e
 
+
+
     @router.get("/dados-nfe-local-from-file/")
     async def obter_dados_nfe_from_file(
             accept: str = Header("application/json, application/xml"),

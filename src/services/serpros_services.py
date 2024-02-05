@@ -1,20 +1,14 @@
-import base64
 import tempfile
 from datetime import datetime
 from tempfile import SpooledTemporaryFile
 from typing import List, Union
 from fastapi import UploadFile
-
 import os
 from zxing import BarCodeReader, BarCode, BarCodeReaderException
-
 from fastapi import HTTPException
-
 import httpx
 import csv
-
 import easyocr
-
 
 SERP_API_URL = 'https://gateway.apiserpro.serpro.gov.br/consulta-nfe-df-trial/api/v1/nfe'
 
@@ -96,15 +90,6 @@ class SerprosServices:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Erro ao extrair texto da imagem: {str(e)}")
 
-    # def extract_text_from_image(image_path, language='pt'):
-    #     reader = easyocr.Reader([language])
-    #     result = reader.readtext(image_path)
-    #     extracted_text = ' '.join([item[1] for item in result])
-    #     return extracted_text
-    # image_path = 'doc/NFs.png'
-    # result_text = extract_text_from_image(image_path, language='pt')
-    # print(result_text)
-
 ################################################Upload DE ARQUIVOS ##################################################################
 
     def read_and_convert_to_json_auto(file: UploadFile, authorization: str, language='pt') -> dict:
@@ -155,7 +140,7 @@ class SerprosServices:
         except FileNotFoundError:
             raise
         except Exception as e:
-            raise Exception(f"Erro ao ler e converter arquivo para JSON funcao read_and_convert_to_json_auto: {str(e)}")
+            raise Exception(f"Erro ao ler e converter arquivos para JSON funcao read_and_convert_to_json_auto: {str(e)}")
 
 
     @staticmethod
