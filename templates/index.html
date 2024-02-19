@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processar Nota Fiscal</title>
+</head>
+<body>
+    <h1>Processar Nota Fiscal</h1>
+    <form id="form" action="/serpros/dados-nfe-online2" method="get">
+        <label for="chave_nfe">Chave NFe:</label>
+        <input type="text" id="chave_nfe" name="chave_nfe" required>
+        <button type="button" onclick="submitForm()">Processar</button>
+    </form>
+    <div id="result"></div>
+    <script>
+        async function submitForm() {
+            const chaveNFe = document.getElementById("chave_nfe").value;
+            const response = await fetch(`/serpros/dados-nfe-online2/${chaveNFe}`);
+            const htmlData = await response.text(); // Receber a resposta como texto
+            const resultDiv = document.getElementById("result");
+            resultDiv.innerHTML = htmlData; // Inserir o HTML retornado na div de resultado
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado da Consulta de Nota Fiscal</title>
+</head>
+<body>
+    <h1>Resultado da Consulta de Nota Fiscal</h1>
+
+    <h2>Dados da Nota Fiscal:</h2>
+    <div id="resultado">
+        {% if error_message %}
+            <p><strong>Error:</strong> {{ error_message }}</p>
+        {% else %}
+            <p><strong>nProt:</strong> {{ dados_nfe.nProt }}</p>
+            <p><strong>Id:</strong> {{ dados_nfe.Id }}</p>
+            <p><strong>Nome do Emitente:</strong> {{ dados_nfe.emit.xNome }}</p>
+            <p><strong>Endereço do Emitente:</strong> {{ dados_nfe.emit.enderEmit.xLgr }}, {{ dados_nfe.emit.enderEmit.nro }} - {{ dados_nfe.emit.enderEmit.xMun }}, {{ dados_nfe.emit.enderEmit.UF }}</p>
+            <p><strong>Nome do Destinatário:</strong> {{ dados_nfe.dest.xNome }}</p>
+            <p><strong>Endereço do Destinatário:</strong> {{ dados_nfe.dest.enderDest.xLgr }}, {{ dados_nfe.dest.enderDest.nro }} - {{ dados_nfe.dest.enderDest.xMun }}, {{ dados_nfe.dest.enderDest.UF }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>

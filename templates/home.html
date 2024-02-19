@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nota Fiscal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            margin: 0;
+        }
+        .invoice-details {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        .total {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .historico {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Nota Fiscal</h1>
+        <div class="invoice-details">
+            <label for="codigoNota">Código da Nota Fiscal:</label>
+            <input type="text" id="codigoNota" name="codigoNota" placeholder="Digite o código da nota fiscal">
+            <button onclick="buscarNotaFiscal()">Buscar</button>
+            <div id="dadosNotaFiscal" style="display: none;">
+                <p><strong>Número:</strong> <span id="numeroNota"></span></p>
+                <p><strong>Data:</strong> <span id="dataNota"></span></p>
+            </div>
+        </div>
+        <table id="tabelaItens" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Descrição</th>
+                    <th>Quantidade</th>
+                    <th>Preço Unitário</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="itemsList">
+                <!-- Dados dos itens da nota fiscal serão inseridos aqui -->
+            </tbody>
+        </table>
+        <div class="total" id="totalNota" style="display: none;">
+            <p>Total: R$ <span id="valorTotalNota"></span></p>
+        </div>
+        <div id="dadosEmpresaRemetente" style="display: none;">
+            <h2>Dados da Empresa Remetente</h2>
+            <p><strong>Nome:</strong> <span id="nomeEmpresaRemetente"></span></p>
+            <p><strong>CNPJ:</strong> <span id="cnpjEmpresaRemetente"></span></p>
+            <p><strong>Inscrição Estadual:</strong> <span id="ieEmpresaRemetente"></span></p>
+        </div>
+        <div id="dadosEmpresaDestinatario" style="display: none;">
+            <h2>Dados do Destinatário</h2>
+            <p><strong>Nome:</strong> <span id="nomeEmpresaDestinatario"></span></p>
+            <p><strong>CNPJ:</strong> <span id="cnpjEmpresaDestinatario"></span></p>
+            <p><strong>Inscrição Estadual:</strong> <span id="ieEmpresaDestinatario"></span></p>
+            <p><strong>E-mail:</strong> <span id="emailEmpresaDestinatario"></span></p>
+        </div>
+        <div class="historico" id="historicoNotasFiscais">
+            <h2>Histórico de Notas Fiscais</h2>
+            <ul id="listaHistorico">
+                <!-- Lista de notas fiscais já consultadas será inserida aqui -->
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Constante para definir o limite de notas fiscais no histórico
+        const limiteHistorico = 35;
+
+        // Array para armazenar o histórico de notas fiscais consultadas
+        let historicoNotasFiscais = [];
+
+        // Função para buscar a nota fiscal ao clicar no botão "Buscar"
+        function buscarNotaFiscal() {
+            const codigoNota = document.getElementById("codigoNota").value;
+            fetch(`http://127.0.0.1:8000/dados-nfe-online/${codigoNota}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Adicionar o código da nota fiscal ao histórico
+                    historicoNotasFiscais.push(codigoNota);
+
+                    // Limitar o tamanho do histórico
+                    if (historicoNotasFiscais.length > limiteHistorico) {
+                        historicoNotasFiscais = historicoNotasFiscais.slice(1);
+                    }
+
+                    // Preencher os dados da nota fiscal no HTML
+                    document.getElementById("numeroNota").innerText = data.nfeProc.protNFe.infProt.nProt;
+                    document.getElementById("dataNota").innerText = data.nfeProc.protNFe.infProt.dhRecbto;
+
+                    const itemsList = document.getElementById("itemsList");
+                    let totalNota = 0;
+
+                    data.nfeProc.NFe.infNFe.det.forEach(item => {
+                        const totalItem = item.prod.qCom * item.prod.vUnCom;
+                        totalNota += totalItem;
+
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${item.nItem}</td>
+                            <td>${item.prod.xProd}</td>
+                            <td>${item.prod.qCom}</td>
+                            <td>R$ ${item.prod.vUnCom.toFixed(2)}</td>
+                            <td>R$ ${totalItem.toFixed(2)}</td>
+                        `;
+                        itemsList.appendChild(row);
+                    });
+
+                    document.getElementById("valorTotalNota").innerText = totalNota.toFixed(2);
+
+                    // Exibir os elementos da nota fiscal
+                    document.getElementById("dadosNotaFiscal").style.display = "block";
+                    document.getElementById("tabelaItens").style.display = "table";
+                    document.getElementById("totalNota").style.display = "block";
+
+                    // Preencher os dados da empresa remetente
+                    const dadosEmpresaRemetente = data.nfeProc.NFe.infNFe.emit;
+                    document.getElementById("nomeEmpresaRemetente").innerText = dadosEmpresaRemetente.xNome;
+                    document.getElementById("cnpjEmpresaRemetente").innerText = dadosEmpresaRemetente.CNPJ;
+                    document.getElementById("ieEmpresaRemetente").innerText = dadosEmpresaRemetente.IE;
+                    document.getElementById("dadosEmpresaRemetente").style.display = "block";
+
+                    // Preencher os dados da empresa destinatário
+                    const dadosEmpresaDestinatario = data.nfeProc.NFe.infNFe.dest;
+                    document.getElementById("nomeEmpresaDestinatario").innerText = dadosEmpresaDestinatario.xNome;
+                    document.getElementById("cnpjEmpresaDestinatario").innerText = dadosEmpresaDestinatario.CNPJ;
+                    document.getElementById("ieEmpresaDestinatario").innerText = dadosEmpresaDestinatario.IE;
+                    document.getElementById("emailEmpresaDestinatario").innerText = dadosEmpresaDestinatario.email;
+                    document.getElementById("dadosEmpresaDestinatario").style.display = "block";
+
+                    // Atualizar o histórico de notas fiscais já consultadas
+                    atualizarHistoricoNotasFiscais();
+                })
+                .catch(error => console.error('Erro ao consultar a nota fiscal:', error));
+        }
+
+        // Função para atualizar o histórico de notas fiscais já consultadas
+        function atualizarHistoricoNotasFiscais() {
+            const listaHistorico = document.getElementById("listaHistorico");
+            listaHistorico.innerHTML = "";
+
+            historicoNotasFiscais.forEach(codigoNota => {
+                const itemLista = document.createElement("li");
+                itemLista.textContent = codigoNota;
+                itemLista.addEventListener("click", () => {
+                    // Ao clicar em uma nota fiscal no histórico, buscar novamente
+                    document.getElementById("codigoNota").value = codigoNota;
+                    buscarNotaFiscal();
+                });
+                listaHistorico.appendChild(itemLista);
+            });
+        }
+    </script>
+</body>
+</html>

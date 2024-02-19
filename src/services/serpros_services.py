@@ -10,13 +10,13 @@ import httpx
 import csv
 import easyocr
 
-SERP_API_URL = 'https://gateway.apiserpro.serpro.gov.br/consulta-nfe-df-trial/api/v1/nfe'
+SERP_API_URL_NFS = 'https://gateway.apiserpro.serpro.gov.br/consulta-nfe-df-trial/api/v1/nfe'
 
 
 class SerprosServices:
     @staticmethod
     def obter_dados_nfe(chave_nfe: str, authorization: str):
-        url = f"{SERP_API_URL}/{chave_nfe}"
+        url = f"{SERP_API_URL_NFS}/{chave_nfe}"
 
         headers = {
             'Content-Type': 'application/json',
@@ -185,3 +185,34 @@ class SerprosServices:
         except Exception as e:
             print(f"Erro durante o processamento do arquivo: {str(e)}")
             return None
+
+    def obter_dados_nfe2(chave_nfe: str, authorization: str):
+        url = f"{SERP_API_URL_NFS}/{chave_nfe}"
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': authorization
+        }
+
+        with httpx.Client() as client:
+            try:
+                response = client.get(url, headers=headers)
+
+                if response.status_code == 200:
+                    dados_nfe = response.json()["nfeProc"]
+                    emitente = dados_nfe["protNFe"]["infProt"]["xNome"]
+                    destinatario = dados_nfe["dest"]["xNome"]
+                    protocolo = dados_nfe["protNFe"]["infProt"]["nProt"]
+                    chave_nfe = dados_nfe["protNFe"]["infProt"]["chNFe"]
+
+                    return {
+                        "emitente": emitente,
+                        "destinatario": destinatario,
+                        "protocolo": protocolo,
+                        "chave_nfe": chave_nfe
+                    }
+                else:
+                    raise HTTPException(status_code=response.status_code, detail=response.text)
+            except httpx.HTTPError as e:
+                raise HTTPException(status_code=500, detail=f"Erro na requisição HTTP: {str(e)}")

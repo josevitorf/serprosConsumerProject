@@ -1,19 +1,34 @@
 import os
 
-from fastapi import APIRouter, Header, HTTPException, UploadFile, File
+import datetime
+from typing import List, Dict
+
+from fastapi import APIRouter, Header, UploadFile, File, FastAPI, Request, HTTPException, Form, Request
 import json
 from fastapi.responses import JSONResponse
 
 from src.services.serpros_services import SerprosServices
+from src.SerprosAPI.APISerpros import SerprosAPI
 
-router = APIRouter(prefix="/serpros")
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+#router = APIRouter(prefix="/serpros")
+router = APIRouter()
+
+templates = Jinja2Templates(
+    directory="templates")  # Crie uma pasta 'templates' no mesmo diretório do seu código e coloque seus arquivos HTML lá
+
 
 class SerprosController:
-
 
     @router.get("/message")
     def read_users():
         return {"Bem Vindo ao projeto Serpros"}
+
+    @router.get("/", response_class=HTMLResponse)
+    async def read_item(request: Request):
+        return templates.TemplateResponse("home.html", {"request": request})
 
     @router.get("/dados-nfe-local/{chave_nfe}")
     async def obter_dados_nfe_endpoint_Local(chave_nfe: str,
@@ -68,7 +83,6 @@ class SerprosController:
 
         return resultados
 
-
     @router.get("/files-convert/")
     async def convert_file_to_json():
         try:
@@ -79,21 +93,18 @@ class SerprosController:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Erro ao processar arquivo: {str(e)}")
 
-
-
-################################## MULTI LOTES CODIGOS #######################################
+    ################################## MULTI LOTES CODIGOS #######################################
 
     @router.get("/dados-nfe-local/{chave_nfe}")
     async def obter_dados_nfe_endpoint_local(chave_nfe: str,
                                              accept: str = Header("application/json, application/xml"),
-                                             authorization: str = Header("Bearer 06aef429-a981-3ec5-a1f8-71d38d86481e")):
+                                             authorization: str = Header(
+                                                 "Bearer 06aef429-a981-3ec5-a1f8-71d38d86481e")):
         try:
             dados_nfe = SerprosServices.obter_dados_nfe(chave_nfe, authorization)
             return dados_nfe
         except HTTPException as e:
             raise e
-
-
 
     @router.get("/dados-nfe-local-from-file/")
     async def obter_dados_nfe_from_file(
@@ -163,9 +174,7 @@ class SerprosController:
         except HTTPException as e:
             raise e
 
-
-
-################################################Upload DE ARQUIVOS ##################################################################
+    ################################################Upload DE ARQUIVOS ##################################################################
     @router.post("/processar-arquivo/")
     async def processar_arquivo(
             file: UploadFile = File(...),
@@ -186,3 +195,178 @@ class SerprosController:
             print(f"Erro durante o processamento do arquivo: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Erro durante o processamento do arquivo: {str(e)}")
 
+    ####################################################################################################################################
+    ####################################################################################################################################
+    ####################################################################################################################################
+    # @router.route("/processar-nota-fiscal-front2", methods=["GET", "POST"], response_class=HTMLResponse)
+    # async def processar_nota_fiscal(request: Request, chave_nfe: str = Form(...), authorization: str = Form(...)):
+    #     if request.method == "POST":
+    #         if not chave_nfe:
+    #             error_message = "Chave NFe não fornecida."
+    #             return templates.TemplateResponse("index.html", {"request": request, "error_message": error_message})
+    #
+    #         dados_nfe = SerprosServices.obter_dados_nfe(chave_nfe, authorization)
+    #
+    #         if not dados_nfe:
+    #             error_message = "Erro ao obter os dados da nota fiscal."
+    #             return templates.TemplateResponse("index.html", {"request": request, "error_message": error_message})
+    #
+    #         return templates.TemplateResponse("index.html", {"request": request, "dados_nfe": dados_nfe})
+    #
+    #     # Se o método for GET, retorne uma página com o formulário
+    #     dados_nfe = {
+    #         "nProt": "Default nProt",
+    #         "Id": "Default Id",
+    #         "emit": {
+    #             "xNome": "Default Emitente",
+    #             "enderEmit": {
+    #                 "xLgr": "Default Endereço",
+    #                 "nro": "Default 123",
+    #                 "xMun": "Default Cidade",
+    #                 "UF": "Default UF"
+    #             }
+    #         },
+    #         "dest": {
+    #             "xNome": "Default Destinatário",
+    #             "enderDest": {
+    #                 "xLgr": "Default Endereço",
+    #                 "nro": "Default 456",
+    #                 "xMun": "Default Cidade",
+    #                 "UF": "Default UF"
+    #             }
+    #         }
+    #     }
+    #     return templates.TemplateResponse("index.html", {"request": request, "dados_nfe": dados_nfe})
+
+    # @router.get("/processar-nota-fiscal-front2", response_class=HTMLResponse)
+    # async def processar_nota_fiscal(request: Request):
+    #     dados_nfe = None
+    #     error_message = None
+    #     return templates.TemplateResponse("index.html",
+    #                                       {"request": request, "dados_nfe": dados_nfe, "error_message": error_message})
+    #
+    # @router.post("/processar-nota-fiscal-front2", response_class=HTMLResponse)
+    # async def processar_nota_fiscal(request: Request, chave_nfe: str = Form(...), authorization: str = Form(...)):
+    #     if not chave_nfe:
+    #         error_message = "Chave NFe não fornecida."
+    #         return templates.TemplateResponse("index.html", {"request": request, "error_message": error_message})
+    #
+    #     dados_nfe = SerprosServices.obter_dados_nfe(chave_nfe, authorization)
+    #
+    #     if not dados_nfe:
+    #         error_message = "Erro ao obter os dados da nota fiscal."
+    #         return templates.TemplateResponse("index.html", {"request": request, "error_message": error_message})
+    #
+    #     return templates.TemplateResponse("index.html", {"request": request, "dados_nfe": dados_nfe})
+
+    #     @router.get("/", response_class=HTMLResponse)
+    #     async def read_item():
+    #         return """
+    #         <html lang="en">
+    # <head>
+    #     <meta charset="UTF-8">
+    #     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    #     <title>Processar Nota Fiscal</title>
+    # </head>
+    # <body>
+    #     <h1>Processar Nota Fiscal</h1>
+    #     <form id="form" action="/serpros/dados-nfe-online2" method="get">
+    #         <label for="chave_nfe">Chave NFe:</label>
+    #         <input type="text" id="chave_nfe" name="chave_nfe" required>
+    #         <button type="button" onclick="submitForm()">Processar</button>
+    #     </form>
+    #     <div id="result"></div>
+    #     <script>
+    #         async function submitForm() {
+    #             const chaveNFe = document.getElementById("chave_nfe").value;
+    #             const response = await fetch(`/serpros/dados-nfe-online2/${chaveNFe}`);
+    #             const htmlData = await response.text(); // Receber a resposta como texto
+    #             const resultDiv = document.getElementById("result");
+    #             resultDiv.innerHTML = htmlData; // Inserir o HTML retornado na div de resultado
+    #         }
+    #     </script>
+    # </body>
+    # </html>
+    #         """
+    #
+    #     @router.get("/dados-nfe-online2/{chave_nfe}", response_class=HTMLResponse)
+    #     async def obter_dados_nfe_endpoint_online(chave_nfe: str,
+    #                                               accept: str = Header("application/json, application/xml"),
+    #                                               authorization: str = Header(
+    #                                                   "Bearer 06aef429-a981-3ec5-a1f8-71d38d86481e")):
+    #         try:
+    #             # Aqui você chamaria sua função para obter os dados da nota fiscal
+    #             # Substitua isso com sua lógica real para obter os dados da nota fiscal
+    #             dados_nfe = {
+    #                 "nProt": "123456",
+    #                 "Id": "NFe123",
+    #                 "emit": {"xNome": "Empresa Emitente",
+    #                          "enderEmit": {"xLgr": "Rua A", "nro": "123", "xMun": "Cidade", "UF": "UF"}},
+    #                 "dest": {"xNome": "Destinatário",
+    #                          "enderDest": {"xLgr": "Rua B", "nro": "456", "xMun": "Cidade B", "UF": "UF B"}}
+    #             }
+    #             return dados_nfe
+    #         except HTTPException as e:
+    #             raise e
+
+
+
+    @router.get("/dados-nfe-online/{chave_nfe}", response_class=JSONResponse)
+    async def obter_dados_nfe_endpoint_online(chave_nfe: str,
+                                              accept: str = Header("application/json, application/xml"),
+                                              authorization: str = Header(
+                                                  "Bearer 06aef429-a981-3ec5-a1f8-71d38d86481e"),
+                                              request: Request = None):
+        try:
+            dados_nfe = SerprosServices.obter_dados_nfe(chave_nfe,
+                                                        authorization)  # Supondo que SerprosServices.obter_dados_nfe seja uma função que retorna os dados da nota fiscal
+            return dados_nfe
+        except HTTPException as e:
+            raise e
+
+    ########################################################################################################################
+    @router.get("/dados-nfe-online-alguns/{chave_nfe}")
+    async def obter_dados_nfe_endpoint_online_especific(chave_nfe: str):
+        try:
+
+            # Obter os dados da NF-e da Serpros API
+            dados_nfe = SerprosAPI.obter_dados_nfe(chave_nfe)
+            #print(dados_nfe)
+
+            # Extrair o CNPJ do emitente da NF-e
+            cnpj_emitente = dados_nfe.get("nfeProc", {}).get("NFe", {}).get("infNFe", {}).get("emit", {}).get("CNPJ", None)
+            #print(cnpj_emitente)
+
+            cnpj_mock = 34238864000168
+
+            #Chamar a API da Serpros para obter dados do CNPJ
+            dados_cnpj = SerprosAPI.obter_dados_cnpj(cnpj_mock, authorization="Bearer 06aef429-a981-3ec5-a1f8-71d38d86481e")
+            #print(dados_cnpj)
+
+            # Extrair o campo "CPF" do payload da NF-e
+            nfe_data = dados_nfe.get("nfeProc", {}).get("protNFe", {}).get("infProt", {})
+            cpf = dados_nfe.get("nfeProc", {}).get("NFe", {}).get("infNFe", {}).get("dest", {}).get("CPF", None)
+            dhRecbto = nfe_data.get("dhRecbto", None)
+
+            # Extrair os produtos
+            produtos = []
+            det = dados_nfe.get("nfeProc", {}).get("NFe", {}).get("infNFe", {}).get("det", [])
+            for item in det:
+                produto = item.get("prod", {}).get("xProd", None)
+                if produto:
+                    produtos.append({"xProd": produto})
+
+            payload = {
+                "CPF": cpf,
+                "dhRecbto": dhRecbto,
+                "produtos": produtos,
+                "cnpj_emitente": cnpj_emitente,
+                #"AQUI COMECA OS DADOS CNPJ": "DADOS CNPJ",
+                #"dados_cnpj": dados_cnpj
+            }
+
+            return payload
+
+            #return {"CPF": cpf, "dhRecbto": dhRecbto, "produtos": produtos, "cnpj_emitente": cnpj_emitente}
+        except HTTPException as e:
+            raise e
