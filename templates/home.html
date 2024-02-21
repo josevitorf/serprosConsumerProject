@@ -43,6 +43,14 @@
         .historico {
             margin-top: 20px;
         }
+        .historico li {
+            cursor: pointer;
+            margin-bottom: 5px;
+            color: blue;
+        }
+        .historico li:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -102,6 +110,16 @@
         // Array para armazenar o histórico de notas fiscais consultadas
         let historicoNotasFiscais = [];
 
+        // Função para buscar a nota fiscal ao clicar em um item do histórico
+        function buscarNotaHistorico(codigoNota) {
+            fetch(`http://127.0.0.1:8000/dados-nfe-online/${codigoNota}`)
+                .then(response => response.json())
+                .then(data => {
+                    preencherDadosNotaFiscal(data);
+                })
+                .catch(error => console.error('Erro ao consultar a nota fiscal:', error));
+        }
+
         // Função para buscar a nota fiscal ao clicar no botão "Buscar"
         function buscarNotaFiscal() {
             const codigoNota = document.getElementById("codigoNota").value;
@@ -117,53 +135,59 @@
                     }
 
                     // Preencher os dados da nota fiscal no HTML
-                    document.getElementById("numeroNota").innerText = data.nfeProc.protNFe.infProt.nProt;
-                    document.getElementById("dataNota").innerText = data.nfeProc.protNFe.infProt.dhRecbto;
-
-                    const itemsList = document.getElementById("itemsList");
-                    let totalNota = 0;
-
-                    data.nfeProc.NFe.infNFe.det.forEach(item => {
-                        const totalItem = item.prod.qCom * item.prod.vUnCom;
-                        totalNota += totalItem;
-
-                        const row = document.createElement("tr");
-                        row.innerHTML = `
-                            <td>${item.nItem}</td>
-                            <td>${item.prod.xProd}</td>
-                            <td>${item.prod.qCom}</td>
-                            <td>R$ ${item.prod.vUnCom.toFixed(2)}</td>
-                            <td>R$ ${totalItem.toFixed(2)}</td>
-                        `;
-                        itemsList.appendChild(row);
-                    });
-
-                    document.getElementById("valorTotalNota").innerText = totalNota.toFixed(2);
+                    preencherDadosNotaFiscal(data);
 
                     // Exibir os elementos da nota fiscal
                     document.getElementById("dadosNotaFiscal").style.display = "block";
                     document.getElementById("tabelaItens").style.display = "table";
                     document.getElementById("totalNota").style.display = "block";
 
-                    // Preencher os dados da empresa remetente
-                    const dadosEmpresaRemetente = data.nfeProc.NFe.infNFe.emit;
-                    document.getElementById("nomeEmpresaRemetente").innerText = dadosEmpresaRemetente.xNome;
-                    document.getElementById("cnpjEmpresaRemetente").innerText = dadosEmpresaRemetente.CNPJ;
-                    document.getElementById("ieEmpresaRemetente").innerText = dadosEmpresaRemetente.IE;
-                    document.getElementById("dadosEmpresaRemetente").style.display = "block";
-
-                    // Preencher os dados da empresa destinatário
-                    const dadosEmpresaDestinatario = data.nfeProc.NFe.infNFe.dest;
-                    document.getElementById("nomeEmpresaDestinatario").innerText = dadosEmpresaDestinatario.xNome;
-                    document.getElementById("cnpjEmpresaDestinatario").innerText = dadosEmpresaDestinatario.CNPJ;
-                    document.getElementById("ieEmpresaDestinatario").innerText = dadosEmpresaDestinatario.IE;
-                    document.getElementById("emailEmpresaDestinatario").innerText = dadosEmpresaDestinatario.email;
-                    document.getElementById("dadosEmpresaDestinatario").style.display = "block";
-
                     // Atualizar o histórico de notas fiscais já consultadas
                     atualizarHistoricoNotasFiscais();
                 })
                 .catch(error => console.error('Erro ao consultar a nota fiscal:', error));
+        }
+
+        // Função para preencher os dados da nota fiscal no HTML
+        function preencherDadosNotaFiscal(data) {
+            document.getElementById("numeroNota").innerText = data.nfeProc.protNFe.infProt.nProt;
+            document.getElementById("dataNota").innerText = data.nfeProc.protNFe.infProt.dhRecbto;
+
+            const itemsList = document.getElementById("itemsList");
+            let totalNota = 0;
+            itemsList.innerHTML = ""; // Limpar a lista de itens antes de preencher
+
+            data.nfeProc.NFe.infNFe.det.forEach(item => {
+                const totalItem = item.prod.qCom * item.prod.vUnCom;
+                totalNota += totalItem;
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${item.nItem}</td>
+                    <td>${item.prod.xProd}</td>
+                    <td>${item.prod.qCom}</td>
+                    <td>R$ ${item.prod.vUnCom.toFixed(2)}</td>
+                    <td>R$ ${totalItem.toFixed(2)}</td>
+                `;
+                itemsList.appendChild(row);
+            });
+
+            document.getElementById("valorTotalNota").innerText = totalNota.toFixed(2);
+
+            // Preencher os dados da empresa remetente
+            const dadosEmpresaRemetente = data.nfeProc.NFe.infNFe.emit;
+            document.getElementById("nomeEmpresaRemetente").innerText = dadosEmpresaRemetente.xNome;
+            document.getElementById("cnpjEmpresaRemetente").innerText = dadosEmpresaRemetente.CNPJ;
+            document.getElementById("ieEmpresaRemetente").innerText = dadosEmpresaRemetente.IE;
+            document.getElementById("dadosEmpresaRemetente").style.display = "block";
+
+            // Preencher os dados da empresa destinatário
+            const dadosEmpresaDestinatario = data.nfeProc.NFe.infNFe.dest;
+            document.getElementById("nomeEmpresaDestinatario").innerText = dadosEmpresaDestinatario.xNome;
+            document.getElementById("cnpjEmpresaDestinatario").innerText = dadosEmpresaDestinatario.CNPJ;
+            document.getElementById("ieEmpresaDestinatario").innerText = dadosEmpresaDestinatario.IE;
+            document.getElementById("emailEmpresaDestinatario").innerText = dadosEmpresaDestinatario.email;
+            document.getElementById("dadosEmpresaDestinatario").style.display = "block";
         }
 
         // Função para atualizar o histórico de notas fiscais já consultadas
@@ -176,8 +200,7 @@
                 itemLista.textContent = codigoNota;
                 itemLista.addEventListener("click", () => {
                     // Ao clicar em uma nota fiscal no histórico, buscar novamente
-                    document.getElementById("codigoNota").value = codigoNota;
-                    buscarNotaFiscal();
+                    buscarNotaHistorico(codigoNota);
                 });
                 listaHistorico.appendChild(itemLista);
             });
